@@ -36,4 +36,4 @@ Ensure that the following directory structures are set up a) Datasets for the da
 4. When another sample is choosen from the dropdown list, the plots will update.
 
 This is an image from the final results:
-(finaloutputwithdropdown.png)
+![Final_Output_with_Dropdown](finaloutputwithdropdown.png)
