@@ -1,31 +1,34 @@
 //References
-var $sampleInfoPanel = document.querySelector("#sample-metadata");
-
+//var $sampleInfoPanel = document.querySelector("#sample-metadata");
+//changed name from $sampleInfoPanel to sampleMetadata
+var $sampleMetadata = document.getElementById("#sample-metadata");
 var defaultSample = "BB_940";
 
-function init() {
+function init(sample) {
   // sample metadata panel
   //url = "/metadata/" + defaultSample
-  url = "/metadata/BB_940"
-  d3.json(url, function (error, response) {
+  console.log("inside init again, current sample:" + defaultSample)
+  //url = "/metadata/BB_940"; //hard coded version
+  url = "/metadata/" + defaultSample;
+  console.log(url)
+  Plotly.d3.json(url, function (error, response) {
     if (error) return console.log(error);
-    //console.log(response);
+    console.log('response' + response);
     // get list of keys from response
     var responseKeys = Object.keys(response);
-    //console.log(keys);
+    console.log(responseKeys);
 
-    // // identify correct div
-    // var $sampleInfoPanel = document.querySelector("#sample-metadata");
-
-    // // reset HTML to be nothing
-    // $sampleInfoPanel.innerHTML = null;
-
+    // identify correct div
+    metadata_info = document.getElementById("#sample-metadata");
+    // reset HTML to be nothing
+    metadata_info.innerHTML = "";
     // loop through response keys and create a P element for each including
     // response key and value
     for (var i = 0; i < responseKeys.length; i++) {
-      var $p = document.createElement('p');
-      $p.innerHTML = responseKeys[i] + ": " + response[responseKeys[i]];
-      $sampleInfoPanel.appendChild($p);
+      var p = document.createElement('p');
+      p.innerHTML = responseKeys[i] + ": " + response[responseKeys[i]];
+      //$sampleMetadata.appendChild(p);
+      metadata_info.appendChild(p);
     }
 
   });
@@ -36,18 +39,20 @@ function init() {
   //When route = "/samples/BB_940"
   //samples route needs pie chart and bubble chart. 
   //Plotly.d3.json("samples/" + defaultSample, function(error, samp_response){
-  Plotly.d3.json('samples/BB_940', function (error, samp_response) {
+  samp_url = "/samples/" + defaultSample;
+  //Plotly.d3.json('samples/BB_940', function (error, samp_response) {
+  Plotly.d3.json(samp_url, function (error, samp_response) {
     if (error) return console.warn(error);
     console.log(samp_response);
     labels = samp_response.otu_ids.slice(0, 10);
-    vals = samp_response["sample_values"].slice(0, 10);
+    vals = samp_response["sample_values"].slice(0, 10);  //Change to dot notation?
 
     //Pie Chart needs OTU descriptions as hovertext for chart. Get matching descriptions and create a list
-    var bacteriaNamesPie = []
+    var bacteriaNamesPie = [];
     for (var i = 0; i < labels.length; i++) {
-      bacteriaNamesPie.push(samp_response[labels[i]])
+      bacteriaNamesPie.push(samp_response[labels[i]]);
     }
-    console.log(bacteriaNamesPie)
+    console.log(bacteriaNamesPie);
     //set up data for pie chart
     var data = [{
       values: labels,
@@ -83,9 +88,27 @@ function init() {
     Plotly.plot(PIE, data, layout);
   });
 
-  //Bubble Chart 
+//names
+Plotly.d3.json('/names', function(error, names_response){
+  if (error) return console.warn(error);
 
-  Plotly.d3.json('samples/BB_940', function (error, bubble_response) {
+  console.log("Names Response:" + names_response);
+  
+  var name_select = document.getElementById('selDataset');
+  name_select.innerHTML = "";
+  for(i=0; i<names_response.length; i++){
+      var elem = document.createElement("option");
+      elem.textContent = names_response[i]; //used textContent instead of innerHTML
+      elem.value = names_response[i];
+      name_select.appendChild(elem);
+  }
+});
+
+
+  //Bubble Chart 
+  bubl_url = "/samples/" + defaultSample; //eg. '/samples/BB_947'
+  //Plotly.d3.json('samples/BB_940', function (error, bubble_response) {
+  Plotly.d3.json(bubl_url, function (error, bubble_response) {
     var bubbleDiv = document.getElementById("bubble-chart");
     //if (error) return console.warn(error);
     console.log(bubble_response);
@@ -115,48 +138,53 @@ function init() {
       //   right: 10,
       //   left: 10
       // }
-    }
+    };
     //};
     Plotly.plot(bubbleDiv, bubdata, bublayout);
-  }) //;
+  }); //;
 
 
 
-}; //new end init
+} //new end init
 
-function optionChanged(val) {
-  defaultSample = val;
-  // Plotly.d3.json('/names'), function(error, response){
-  //   if (error) return console.warn(error);
-  //   select = document.getElementById('selData');
-
-  // }
+//////////////////////////////////
+/* update pie and bubble charts */
+//////////////////////////////////
+function updatePie(newsampleValues, newotuIds, newSample) {
+  var pie = document.getElementById("pie");
+  Plotly.restyle(pie, "values", [newsampleValues]);
+  Plotly.restyle(pie, "labels"[newotuIds]);
+};
+function updateBubble(newX, newY, newSample) {
+  var bubble = document.getElementById("bubble-chart");
+  Plotly.restyle(bubble, "x", [newX]);
+  Plotly.restyle(bubble, "y", [newY]);
 };
 
-// handle change in dropdown
-// function optionChanged(chosenSample){
+/////////////////////////////
+/* option changed function for dropdown */
+/////////////////////////////
+function optionChanged() {  
+  const metadataUrl = "/metadata/" + defaultSample;
+  const sampleUrl = "/samples/" + defaultSample;
+  //console.log(defaultSample);
+  
+   //get new data from sample route
+   Plotly.d3.json(sampleUrl, function (error, newData) {
+    if (error) return console.log(error);
+    console.log(newData);
+    //slice to grab top 10 values from keys
+    var newsampleValues = newData[0]["sample_values"].slice(0, 10);
+    console.log('newsamplevalues' + newsampleValues)
+    var newotuIds = newData[0]["otu_ids"].slice(0, 10);
+    console.log('newotuIds' + newotuIds)
+    //get values for bubble chart x- and y-axis 
+    var newX = newData[0]["otu_ids"]
+    var newY = newData[0]["sample_values"]
+    updatePie(newsampleValues, newotuIds, newSample);
+    updateBubble(newX, newY, newSample);
+});
+};
 
-//   d3.json("/metadata/" + chosenSample, function(error, response){
 
-//       if (error) return console.warn(error);
-
-//       console.log(response);
-
-//       var responseKeys = Object.keys(response);
-
-//       console.log(responseKeys);
-
-//       var $sampleInfoPanel = document.querySelector("#sample-metadata");
-
-//       $sampleInfoPanel.innerHTML = null;
-
-//       for (var i=0; i<responseKeys.length; i++){
-//           var $dataPoint = document.createElement('p');
-//           $dataPoint.innerHTML = responseKeys[i] + ": " + response[responseKeys[i]];
-//           $sampleInfoPanel.appendChild($dataPoint);
-//       }
-
-// });
-//end optionChanged
-
-init();
+init(defaultSample);
