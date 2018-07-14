@@ -29,7 +29,7 @@ from bbd import return_sample_names
 app = Flask(__name__)
 
 # Create a connection to a SQLite database
-engine = create_engine('sqlite:///Datasets/belly_button_biodiversity.sqlite', echo=False)
+engine = create_engine('sqlite:///DataSets/belly_button_biodiversity.sqlite', echo=False)
 
 
 # In[3]:
